@@ -98,11 +98,11 @@ class Tetromino {
         // Check if the position is within the grid and a block is not present.
         if (checkPosition.every(([x, y]) => 
             typeof cells[y] != 'undefined' && typeof cells[y][x] != 'undefined' &&
-            (cells[y][x].style.backgroundColor == "transparent" || cells[y][x].style.backgroundColor === ""))) {
+            cells[y][x].style.backgroundColor === "")) {
 
             // Unrender
             this.position.forEach(([x, y]) => {
-                cells[y][x].style.backgroundColor = "transparent";
+                cells[y][x].style.backgroundColor = "";
             });
 
             // Move to the new position and render.
