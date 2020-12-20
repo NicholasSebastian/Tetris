@@ -1,20 +1,67 @@
 $game-height: 95vh;
-$bg-color: #000;
+$background: #000;
+$grid-color: red;
+$panel-color: darkblue;
+$panel-border-color: red;
+$panel-header-color: darkgreen;
 
-body {
-  background-color: $bg-color;
+* {
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-table {
-  margin: 0 auto;
-  width: $game-height / 2;
-  height: $game-height;
-  border-collapse: collapse;
+body {
+  background: $background;
+  display: flex;
+  justify-content: center;
 
-  tbody {
-    tr {
-      td {
-        border: 1px solid red;
+  table {
+    width: $game-height / 2;
+    height: $game-height;
+    border-collapse: collapse;
+    margin: 0 10px;
+
+    tbody {
+      tr {
+        td {
+          border: 1px solid $grid-color;
+        }
+      }
+    }
+  }
+
+  > div {
+    width: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    > div {
+      border: 1px solid $panel-border-color;
+      background-color: $panel-color;
+      color: #fff;
+
+      h3 {
+        background-color: $panel-header-color;
+        font-size: small;
+        font-weight: 400;
+        text-transform: uppercase;
+        margin: 0;
+        padding: 5px 10px;
+        border-bottom: 1px solid $panel-border-color;
+      }
+    }
+
+    #controls {
+      dl {
+        font-size: small;
+        padding: 0 10px;
+      }
+    }
+
+    #points {
+      div {
+        padding: 10px;
+        font-size: large;
       }
     }
   }

@@ -1,8 +1,6 @@
 import './styles.scss';
 import tetrominoes from './tetrominoes';
 
-// TODO: Implement rotation matrix
-// TODO: Implement row clearing
 // TODO: Implement points system and other game mechanics
 // TODO: Implement/improve UI
 
@@ -30,7 +28,31 @@ let currentBlock: Tetromino;
 // Definitions
 
 function spawnBlock() {
+    // TODO: randomize position and rotation.
     currentBlock = new Tetromino(0, 3);
+}
+
+const gamePoints = document.getElementById("point-value");
+let points = 0;
+
+function checkRows() {
+    cells.forEach((row, rowIndex) => {
+        if (row.every(cell => cell.style.backgroundColor != "")) {
+            // Clear the row.
+            row.forEach(cell => cell.style.backgroundColor = "");
+
+            // Cascade all cells above the row downwards.
+            for(let y = rowIndex; y > 0; y--) {
+                cells[y - 1].forEach((cell, i) => {
+                    cells[y][i].style.backgroundColor = cell.style.backgroundColor;
+                    cell.style.backgroundColor = "";
+                });
+            }
+
+            // Add the points
+            gamePoints.innerText = String(points += 40);
+        }
+    });
 }
 
 class Tetromino {
@@ -53,9 +75,9 @@ class Tetromino {
         this.render();
     }
 
-    move(direction: "down" | "left" | "right" | "rotate") {
+    move(action: "down" | "left" | "right" | "rotateLeft" | "rotateRight") {
         let targetPosition: Array<[number, number]>;
-        switch (direction) {
+        switch (action) {
             case "down":
                 targetPosition = this.position.map(([x, y]) => [x, y + 1]);
                 break;
@@ -65,26 +87,38 @@ class Tetromino {
             case "right":
                 targetPosition = this.position.map(([x, y]) => [x + 1, y]);
                 break;
-            case "rotate":
-                // Get two opposite corners of the shape.
-                const topLeft = this.position.reduce(([x1, y1], [x2, y2]) => 
-                    [Math.min(x2, x1), Math.min(y2, y1)], 
-                    [Number.MAX_VALUE, Number.MAX_VALUE]);
-                
-                const bottomRight = this.position.reduce(([x1, y1], [x2, y2]) => 
-                    [Math.max(x2, x1), Math.max(y2, y1)], 
-                    [Number.MIN_VALUE, Number.MIN_VALUE]);
+            case "rotateLeft":
+            case "rotateRight":
+                const coordsX = this.position.map(coord => coord[0]);
+                const coordsY = this.position.map(coord => coord[1]);
 
-                // Calculate the width and height of the shape.
-                const width = (bottomRight[0] - topLeft[0]) + 1;
-                const height = (bottomRight[1] - topLeft[1]) + 1;
-                
-                // Rotate the points anti-clockwise.
-                targetPosition = this.position.map(([x, y]) => {
-                    return [x, y]; // TODO
-                });
-                break;
-            default:
+                const left = Math.min(...coordsX);
+                const top = Math.min(...coordsY);
+
+                switch (action) {
+                    case "rotateLeft":
+                        const right = Math.max(...coordsX);
+                        const width = right - left;
+                        const newBottom = top + width;
+                        
+                        targetPosition = this.position.map(([x, y]) => {
+                            const diffX = x - left;
+                            const diffY = y - top;
+                            return [left + diffY, newBottom - diffX];
+                        });
+                        break;
+                    case "rotateRight":
+                        const bottom = Math.max(...coordsY);
+                        const height = bottom - top;
+                        const newRight = left + height;
+
+                        targetPosition = this.position.map(([x, y]) => {
+                            const diffX = x - left;
+                            const diffY = y - top;
+                            return [newRight - diffY, top + diffX];
+                        });
+                        break;
+                }
                 break;
         }
 
@@ -111,7 +145,8 @@ class Tetromino {
         }
         else {
             // Check if the block can no longer move downwards
-            if (direction == "down") {
+            if (action == "down") {
+                checkRows();
                 spawnBlock();
             }
         }
@@ -127,10 +162,12 @@ class Tetromino {
 // Controls
 
 window.onkeydown = (e: KeyboardEvent) => {
-    if (e.code == "KeyW") currentBlock.move("rotate");
-    if (e.code == "KeyS") currentBlock.move("down");
-    if (e.code == "KeyA") currentBlock.move("left");
-    if (e.code == "KeyD") currentBlock.move("right");
+    if (e.code == "ArrowDown") currentBlock.move("down");
+    if (e.code == "ArrowLeft") currentBlock.move("left");
+    if (e.code == "ArrowRight") currentBlock.move("right");
+    if (e.code == "KeyZ") currentBlock.move("rotateLeft");
+    if (e.code == "KeyX") currentBlock.move("rotateRight");
+    // Add space for instant drop down.
 }
 
 // Game loop
