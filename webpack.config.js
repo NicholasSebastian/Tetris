@@ -23,7 +23,13 @@ module.exports = {
       {
         test: /\.(png|svg|jpg|jpeg|gif)$/i,
         type: 'asset/resource',
+        use: 'file-loader'
       },
+      // {
+      //   test: /\.(ogg|mp3|wav|mpe?g)$/i,
+      //   loader: 'file-loader',
+      //   src: path.resolve(__dirname, src, assets)
+      // }
     ],
   },
   devtool: 'source-map',

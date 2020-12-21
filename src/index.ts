@@ -1,59 +1,31 @@
 import './styles.scss';
 import tetrominoes from './tetrominoes';
+import Sound from "./audio";
 
-// TODO: Implement points system and other game mechanics
 // TODO: Implement/improve UI
+// TODO: Implement level ring css
+// TODO: Implement drop location hint and space bar for instant drop down
+
+const game = document.getElementById("game");
+const gamePoints = document.getElementById("point-value");
+const gameLevel = document.getElementById("level-value");
+const gameXpNext = document.getElementById("xp-to-next");
 
 const numberOfRows = 20;
 const numberOfColumns = 10;
+const clearPoints = [0, 40, 100, 300, 1200];
 
-// Initialization
+const moveSound = new Sound("./assets/pop.wav");
+const clearSound = new Sound("./assets/line-clear.wav");
 
-const game = document.getElementById("game");
+const bgm = new Sound("./assets/tetris-bgm.wav");
+bgm.self.loop = true;
+
 const cells = new Array<HTMLElement[]>(numberOfRows);
-
-for (let row = 0; row < cells.length; row++) {
-    const tr = document.createElement("tr");
-    cells[row] = new Array<HTMLElement>(numberOfColumns);
-
-    for (let col = 0; col < cells[row].length; col++) {
-        cells[row][col] = document.createElement("td");
-        tr.appendChild(cells[row][col]);
-    }
-    game.appendChild(tr);
-}
-
 let currentBlock: Tetromino;
-
-// Definitions
-
-function spawnBlock() {
-    // TODO: randomize position and rotation.
-    currentBlock = new Tetromino(0, 3);
-}
-
-const gamePoints = document.getElementById("point-value");
 let points = 0;
-
-function checkRows() {
-    cells.forEach((row, rowIndex) => {
-        if (row.every(cell => cell.style.backgroundColor != "")) {
-            // Clear the row.
-            row.forEach(cell => cell.style.backgroundColor = "");
-
-            // Cascade all cells above the row downwards.
-            for(let y = rowIndex; y > 0; y--) {
-                cells[y - 1].forEach((cell, i) => {
-                    cells[y][i].style.backgroundColor = cell.style.backgroundColor;
-                    cell.style.backgroundColor = "";
-                });
-            }
-
-            // Add the points
-            gamePoints.innerText = String(points += 40);
-        }
-    });
-}
+let level = 0, xp = 0;
+let gravityInterval = 1000;
 
 class Tetromino {
     position: Array<[number, number]>;
@@ -81,12 +53,15 @@ class Tetromino {
             case "down":
                 targetPosition = this.position.map(([x, y]) => [x, y + 1]);
                 break;
+
             case "left":
                 targetPosition = this.position.map(([x, y]) => [x - 1, y]);
                 break;
+
             case "right":
                 targetPosition = this.position.map(([x, y]) => [x + 1, y]);
                 break;
+
             case "rotateLeft":
             case "rotateRight":
                 const coordsX = this.position.map(coord => coord[0]);
@@ -107,6 +82,7 @@ class Tetromino {
                             return [left + diffY, newBottom - diffX];
                         });
                         break;
+
                     case "rotateRight":
                         const bottom = Math.max(...coordsY);
                         const height = bottom - top;
@@ -134,6 +110,9 @@ class Tetromino {
             typeof cells[y] != 'undefined' && typeof cells[y][x] != 'undefined' &&
             cells[y][x].style.backgroundColor === "")) {
 
+            // Play sound
+            if (action != 'down') moveSound.play();
+
             // Unrender
             this.position.forEach(([x, y]) => {
                 cells[y][x].style.backgroundColor = "";
@@ -159,6 +138,57 @@ class Tetromino {
     }
 }
 
+function spawnBlock() {
+    // TODO: randomize position and rotation.
+    currentBlock = new Tetromino(0, 3);
+}
+
+function checkRows() {
+    let clears = 0;
+    cells.forEach((row, rowIndex) => {
+        if (row.every(cell => cell.style.backgroundColor != "")) {
+            // Play sound.
+            clearSound.play();
+
+            // Clear the row.
+            row.forEach(cell => cell.style.backgroundColor = "");
+
+            // Cascade all cells above the row downwards.
+            for(let y = rowIndex; y > 0; y--) {
+                cells[y - 1].forEach((cell, i) => {
+                    cells[y][i].style.backgroundColor = cell.style.backgroundColor;
+                    cell.style.backgroundColor = "";
+                });
+            }
+            clears++;
+        }
+    });
+    addPoints(clears);
+    addLevel(clears);
+}
+
+function addPoints(clears: number) {
+    const clearValue = clearPoints[clears] * (level + 1);
+    points += clearValue;
+    gamePoints.innerText = String(points);
+}
+
+function addLevel(clears: number) {
+    xp += clears;
+    if (xp >= 10) {
+        gameLevel.innerText = String(++level);
+        xp -= 10;
+    }
+    gameXpNext.innerHTML = `Lines to clear: ${10 - xp}`;
+}
+
+const gravity = function() {
+    setTimeout(() => {
+        currentBlock.move("down");
+        gravity();
+    }, gravityInterval - (80 * level)); //  TODO: temporary
+}
+
 // Controls
 
 window.onkeydown = (e: KeyboardEvent) => {
@@ -170,9 +200,19 @@ window.onkeydown = (e: KeyboardEvent) => {
     // Add space for instant drop down.
 }
 
-// Game loop
+// Game begins here
 
-const gravityInterval = 1000;
-setInterval(() => currentBlock.move("down"), gravityInterval);
+for (let row = 0; row < cells.length; row++) {
+    const tr = document.createElement("tr");
+    cells[row] = new Array<HTMLElement>(numberOfColumns);
 
+    for (let col = 0; col < cells[row].length; col++) {
+        cells[row][col] = document.createElement("td");
+        tr.appendChild(cells[row][col]);
+    }
+    game.appendChild(tr);
+}
+
+bgm.play();
 spawnBlock();
+gravity();
